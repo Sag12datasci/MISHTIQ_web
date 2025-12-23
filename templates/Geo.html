@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='Geo.css') }}">
+</head>
+
+<body>
+
+    <div class="page">
+
+        <!-- LEFT INFO PANEL -->
+        <div class="info-panel">
+            <div class="top-row">
+                <div class="title-section">
+                    <h2>Calculate Your<br>Problem Easily.</h2>
+                    <p class="desc-text">
+                        Enter mathematical expressions like<br>
+                        ((20.21-16.66)² + (21.02-16.66)²) / 3²<br>
+                        and get exact & decimal results.
+                    </p>
+                </div>
+
+                <div class="result-box steps-box">
+                    <h3>Steps</h3>
+                    <div class="steps-output"></div>
+                </div>
+            </div>
+
+
+            <div class="tips">
+                <h4>Tip - 1</h4>
+                <p>Use ² or square for power.</p>
+
+                <h4>Tip - 2</h4>
+                <p>Use brackets for accuracy.</p>
+
+                <h4>Tip - 3</h4>
+                <p>Fractions are calculated exactly.</p>
+            </div>
+
+            <!-- STEPS BOX (YELLOW MARK AREA) -->
+
+        </div>
+
+        <!-- CALCULATOR PANEL -->
+        <div class="calculator-panel">
+
+            <!-- DISPLAY -->
+            <div class="display-container">
+                <textarea class="calc-display" placeholder="0" rows="1"></textarea>
+            </div>
+
+
+
+            <!-- BUTTON GRID -->
+            <div class="keys">
+                <button value="sin">sin</button>
+
+                <button value="atan">tan⁻¹</button>
+
+                <button value="asin">sin⁻¹</button>
+                <button value="AC">AC</button>
+                <button value="%">%</button>
+                <button value="DEL">DEL</button>
+                <button value="/">&#247;</button>
+                <button value="cos">cos</button>
+                <button value="acos">cos⁻¹</button>
+                <button value="tan">tan</button>
+                <button value="7">7</button>
+                <button value="8">8</button>
+                <button value="9">9</button>
+                <button value="*">&#215;</button>
+                <button value="cbrt">³√</button>
+
+                <button value="exp">e^x</button>
+                <button value="pow">x^y</button>
+
+                <!-- <button value="x2">x²</button> -->
+                <button value="4">4</button>
+                <button value="5">5</button>
+                <button value="6">6</button>
+                <button value="+">+</button>
+                <button value="x3">x³</button>
+                <button value="inv">1/x</button>
+                <button value="log">log</button>
+                <button value="1">1</button>
+                <button value="2">2</button>
+                <button value="3">3</button>
+                <button value="-">&#8722;</button>
+                <button value="ln">ln</button>
+                <!-- <button value="abs">|x|</button> -->
+
+                <!-- <button value="!">!</button> -->
+
+
+
+                <button value="sqrt">√</button>
+                <button value="(">(</button>
+                <button value=")">)</button>
+
+
+
+                <button value=".">.</button>
+                <button value="0">0</button>
+                <button value="²">n²</button>
+                <button class="equal" value="=">=</button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const display = document.querySelector(".calc-display");
+    function autoScaleDisplay() {
+        const maxSize= window.innerWidth <480 ? 28 : 40; 
+        display.style.fontSize = maxSize + "px"; // reset to max
+
+        while (
+            display.scrollWidth > display.clientWidth &&
+            parseFloat(display.style.fontSize) > 14
+        ) {
+            display.style.fontSize =
+                (parseFloat(display.style.fontSize) - 1) + "px";
+        }
+    }
+        const stepsBox = document.querySelector(".steps-output");
+        let currentMode = "degrees"; // default mode
+
+        // document.getElementById("mode-toggle").addEventListener("click", () => {
+        //     if (currentMode === "degrees") {
+        //         currentMode = "radians";
+        //         document.getElementById("mode-toggle").textContent = "RAD";
+        //     } else {
+        //         currentMode = "degrees";
+        //         document.getElementById("mode-toggle").textContent = "DEG";
+        //     }
+        // })
+
+        async function calculateExpression() {
+            let expr = display.value;
+
+            //  Normalize UI symbols → backend-safe operators
+            expr = expr
+                .replace(/÷/g, "/")
+                .replace(/×/g, "*")
+                .replace(/²/g, "**2")
+                .replace(/√/g, "sqrt(");
+            // const response = await fetch("http://10.197.230.96:5000/calculate", {
+            const response = await fetch("/calculate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // body: JSON.stringify({ expr, mode: currentMode })
+                body: JSON.stringify({ expr })
+            });
+
+            const data = await response.json();
+
+            let stepsText = "";
+            data.steps.forEach(s => {
+                stepsText += `${s[0]} ${s[1]}\n`;
+            });
+
+            stepsText += `\nExact = ${data.result_exact}\n`;
+            stepsText += `Decimal = ${data.result_decimal}`;
+
+            stepsBox.textContent = stepsText;
+        }
+        document.querySelectorAll(".keys button").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const val = btn.value;
+
+                if (val === "AC") {
+                    display.value = "";
+                    stepsBox.textContent = "";
+                    autoScaleDisplay();
+                }
+                else if (val === "DEL") {
+                    display.value = display.value.slice(0, -1);
+                    autoScaleDisplay();
+                }
+                else if (val === "=") {
+                    calculateExpression();
+                }
+
+                // ⭐ Scientific functions need parentheses
+                else if (val === "sin"){
+                    display.value += "sin(";
+                    autoScaleDisplay();
+                }
+                else if (val === "cos") {
+                    display.value += "cos(";
+                    autoScaleDisplay();
+                }
+                else if (val === "tan") {
+                    display.value += "tan(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "asin"){display.value += "asin(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "acos"){
+                     display.value += "acos(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "atan") {
+                    display.value += "atan(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "sqrt"){ 
+                    display.value += "sqrt(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "cbrt"){
+                    display.value += "cbrt(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "ln"){ 
+                    display.value += "ln(";
+                    autoScaleDisplay();
+                }
+                else if (val === "log"){
+                    display.value += "log(";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "exp"){
+                    display.value += "exp(";
+                    autoScaleDisplay();
+                }
+                else if (val === "pow"){
+                    display.value += "^";
+                    autoScaleDisplay();
+                }
+
+                else if (val === "x3"){
+                    display.value += "**3";
+                    autoScaleDisplay();
+                }
+                else if (val === "inv"){
+                    display.value += "1/(";
+                    autoScaleDisplay();
+                }
+
+                else {
+                    display.value += val;
+                    autoScaleDisplay();
+                }
+            });
+        });
+
+
+
+        //  Keyboard Backspace support 
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "Backspace") {
+                display.value = display.value.slice(0, -1);
+                autoScaleDisplay();
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener("load", autoScaleDisplay);
+    </script>
+
+
+
+
+</body>
+
+</html>
